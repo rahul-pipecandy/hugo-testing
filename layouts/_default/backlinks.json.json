@@ -1,0 +1,4 @@
+{{- range site.Pages -}}
+  {{- $noop := .Content -}}
+{{- end -}}
+{{- jsonify (dict "indent" "  ") (.Scratch.GetSortedMapValues "data") -}}

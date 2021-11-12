@@ -1,36 +1,90 @@
-{{- $attrs := dict "href" .Destination -}}
-{{- with .Title -}}
-  {{- $attrs = merge $attrs (dict "title" .) -}}
-{{- end -}}
+{{- /* Configure. */ -}}
+{{- $cfg := site.Params.hu -}}
+{{- $debug := $cfg.internal.debug.enabled -}}
+{{- $debugStyle := $cfg.internal.debug.style -}}
+{{- $dataPage := $cfg.backlinks.data_page -}}
+{{- $classExternal := $cfg.render_hooks.link.external.class -}}
+{{- $classInternal := $cfg.render_hooks.link.internal.class -}}
 
-{{- if site.Params.backlinks.enable -}}
-  {{- if findRE `^[A-Za-z]+:` .Destination -}}
-    {{- $attrs = merge $attrs (dict "class" "external-link") -}}
-  {{- else -}}
-    {{- $permalink := .Page.Permalink -}}
-    {{- $relPermalink := .Page.RelPermalink -}}
-    {{- if site.Params.backlinks.appendFragment -}}
-      {{- $fragment := first 7 (sha1 (print .Destination .Text)) -}}
-      {{- $attrs = merge $attrs (dict "id" $fragment) -}}
-      {{- $permalink = printf "%s#%s" $permalink $fragment -}}
-      {{- $relPermalink = printf "%s#%s" $relPermalink $fragment -}}
+{{- /* Initialize. */ -}}
+{{- $class := "" -}}
+{{- $data := "" -}}
+{{- $id := "" -}}
+
+{{- /* Main. */ -}}
+{{- $u := urls.Parse .Destination -}}
+{{- $destination := $u.String -}}
+{{- if or (strings.HasPrefix $u.String site.BaseURL) (not $u.Scheme) -}}
+  {{- /* .GetPage will fail if the path has a trailing slash. */ -}}
+  {{- with site.GetPage (strings.TrimRight "/" $u.Path) -}}
+    {{- /* This is an internal link. */ -}}
+    {{- $class = $classInternal -}}
+    {{- $destination = .RelPermalink -}}
+    {{- with $u.RawQuery -}}
+      {{- $destination = printf "%s?%s" $destination $u.RawQuery -}}
     {{- end -}}
-    {{- $attrs = merge $attrs (dict
-      "class" "internal-link"
-      "data-source-linktitle" .Page.LinkTitle
-      "data-source-path" .Page.Path
-      "data-source-permalink" $permalink
-      "data-source-relpermalink" $relPermalink
-      "data-source-title" .Page.Title
-      )
+    {{- with $u.Fragment -}}
+      {{- $destination = printf "%s#%s" $destination $u.Fragment -}}
+    {{- end -}}
+    {{- /* Create a unique id. */ -}}
+    {{- $.Page.Scratch.Add "counter" 1 -}}
+    {{- $counter := $.Page.Scratch.Get "counter" -}}
+    {{- $id = printf "b%s%v" ($.Page.RelPermalink | sha1 | first 7) $counter -}}
+    {{- /* Create a map of the backlink data. */ -}}
+    {{- $data = dict
+      "dest" .RelPermalink
+      "src" $.Page.RelPermalink
+      "srcLinkTitle" $.Page.LinkTitle
+      "srcPermalink" (printf "%s#%s" (strings.TrimRight "/" $.Page.Permalink) $id)
+      "srcRelPermalink" (printf "%s#%s" (strings.TrimRight "/" $.Page.RelPermalink) $id)
+      "srcTitle" $.Page.Title
     -}}
+    {{- /* Write the backlink data to a scratch on the backlinks page. */ -}}
+    {{- with site.GetPage $dataPage -}}
+    {{- .Scratch.SetInMap "data" $id $data -}}
+    {{- else -}}
+      {{- errorf "Backlinks data page %q not found. See site configuration." $dataPage -}}
+    {{- end -}}
+  {{- else -}}
+    {{- /* This in neither internal nor external. It's something else. */ -}}
   {{- end -}}
+{{- else if in (slice "http" "https") $u.Scheme -}}
+  {{- /* This is an external link. */ -}}
+  {{- $class = $classExternal -}}
 {{- end -}}
 
+{{- /* Build anchor attributes. */ -}}
+{{- $attrs := dict
+  "class" $class
+  "id" $id
+  "href" $destination
+  "title" .Title
+}}
+
+{{- /* Render the anchor element. */ -}}
 <a
 {{- range $k, $v := $attrs -}}
-  {{- (printf " %s=%q" $k $v) | safeHTMLAttr -}}
+  {{- if $v -}}
+    {{- (printf " %s=%q" $k $v) | safeHTMLAttr -}}
+  {{- end -}}
 {{- end -}}
->{{ safeHTML .Text }}</a>
+>{{- safeHTML .Text -}}</a>
 
-{{- /* Chomp trailing whitespace. */ -}}
+{{- /* Debug. */ -}}
+{{- if $debug -}}
+<pre {{ printf "style=%q" $debugStyle | safeHTMLAttr }}>
+$u.String = {{ $u.String }}
+$u.Scheme = {{ $u.Scheme }}
+$u.Host = {{ $u.Host }}
+$u.Path = {{ $u.Path }}
+$u.RawQuery = {{ $u.RawQuery }}
+$u.Fragment = {{ $u.Fragment }}
+
+$class = {{ $class }}
+$destination = {{ $destination }}
+
+{{ with $data }}{{ jsonify (dict "indent" "    ") . }}{{ end }}
+</pre>
+{{- end -}}
+
+{{- /* Chomp trailing newlines. */ -}}

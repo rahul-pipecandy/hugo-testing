@@ -1,0 +1,38 @@
+{{- /* Configure. */ -}}
+{{- $cfg := site.Params.hu -}}
+{{- $debug := $cfg.internal.init.debug -}}
+{{- $debugPartial := $cfg.internal.debug.partial -}}
+
+{{- /* Verify template existence. */ -}}
+{{- $partials := slice
+  $cfg.internal.debug.partial
+  $cfg.internal.init.partial
+  $cfg.backlinks.get.partial
+  $cfg.backlinks.put.partial
+  $cfg.render_hooks.heading.partial
+  $cfg.render_hooks.image.partial
+  $cfg.render_hooks.link.partial
+-}}
+{{- range $partials -}}
+  {{- $path := path.Join "partials" . -}}
+  {{- if not (templates.Exists $path) -}}
+    {{- errorf (T "error.0001") $path -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Verify dependencies. */ -}}
+{{- if and $cfg.backlinks.enabled (not $cfg.render_hooks.link.enabled ) -}}
+  {{- errorf (T "error.0002") -}}
+{{- end -}}
+
+{{- /* Warn if debugging is enabled. */ -}}
+{{- if $debug -}}
+  {{- warnf (T "warning.0001") -}}
+{{- end -}}
+
+{{- /* Debug. */ -}}
+{{- if $debug -}}
+  {{- partial $debugPartial (jsonify (dict "indent" "    ") $cfg) -}}
+{{- end -}}
+
+{{- /* Chomp trailing newlines. */ -}}

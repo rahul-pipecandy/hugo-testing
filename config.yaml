@@ -1,0 +1,68 @@
+baseURL: 'http://example.org/'
+languageCode: en-us
+title: 'Hugo Forum Topic #33328'
+defaultContentLanguage: en
+defaultContentLanguageInSubdir: true
+languages:
+  en:
+    contentDir: content/en
+    languageName: English
+    weight: 1
+  es:
+    contentDir: content/es
+    languageName: Español
+    weight: 2
+cascade:
+  - layout: backlinks
+    outputs:
+      - JSON
+    _build:
+      list: never
+    _target:
+      path: /backlinks.md
+params:
+  hu:
+    publish_dir: public
+    internal:
+      debug:
+        partial: hu/_internal/debug.html
+        style: 'background: #fadadd; border: 1px solid #333; padding: 1em;'
+      init:
+        debug: false
+        partial: hu/_internal/init.html
+    backlinks:
+      debug: true
+      enabled: true
+      data_page: backlinks
+      get:
+        partial: hu/backlinks/get.html
+        consolidate_sources: false
+        display_self_references: true
+      put:
+        partial: hu/backlinks/get.html
+    render_hooks:
+      link:
+        debug: false
+        enabled: true
+        partial: hu/render-hooks/link.html
+        external:
+          class: link-external
+          rel: nofollow
+          target: _new
+        internal:
+          class: link-internal
+          target: ''
+          rel: ''
+      image:
+        debug: false
+        enabled: true
+        partial: hu/render-hooks/image.html
+      heading:
+        debug: false
+        enabled: true
+        partial: hu/render-hooks/heading.html
+outputFormats:
+  html:
+    weight: 2
+  json:
+    weight: 1

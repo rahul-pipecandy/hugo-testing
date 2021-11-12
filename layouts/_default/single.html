@@ -1,5 +1,7 @@
 {{ define "main" }}
   <h1>{{ .Title }}</h1>
-  {{ partial "backlinks.html" . }}
+  {{ with partial "hu/backlinks/get.html" . }}
+  <p>Backlinks: {{ . }}</p>
+  {{ end }}
   {{ .Content }}
 {{ end }}

@@ -1,0 +1,46 @@
+{{- /* Configure. */ -}}
+
+{{- $cfg := site.Params.hu -}}
+{{- $debug := $cfg.internal.debug.enabled -}}
+{{- $debugPartial := $cfg.internal.debug.partial -}}
+{{- $dataPage := $cfg.backlinks.data_page -}}
+{{- $displaySelfReferences := $cfg.backlinks.get.display_self_references -}}
+{{- $publishDir := $cfg.publish_dir -}}
+
+{{- /* Initialize. */ -}}
+{{- $path := "" -}}
+
+{{- /* Find the backlinks data file. */ -}}
+{{- $try := printf "/%s/%s/index.json" $publishDir $dataPage | path.Clean -}}
+{{- if fileExists $try -}}
+  {{- $path = $try -}}
+{{- else -}}
+{{- $try := printf "/%s/%s/%s/index.json" $publishDir .Lang $dataPage | path.Clean -}}
+  {{- if fileExists $try -}}
+    {{- $path = $try -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Render the backlinks. */ -}}
+{{- with $path -}}
+  {{- with $backlinks := getJSON . -}}
+    {{- with (where $backlinks "dest" $.RelPermalink) }}
+      <ul>
+      {{- range . -}}
+        {{- if or (ne .src .dest) $displaySelfReferences }}
+        <li><a href="{{ .srcRelPermalink }}">{{ .srcTitle }}</a></li>
+        {{- end -}}
+      {{- end }}
+      </ul>
+      {{- if $debug -}}
+        {{- partial $debugPartial (jsonify (dict "indent" "    ") .) -}}
+      {{- end -}}
+    {{- end -}}
+  {{- else -}}
+    {{- /* We must let this fail silently. */ -}}
+  {{- end -}}
+{{- else -}}
+  {{- errorf "Unable to find backlinks data file." -}}
+{{- end -}}
+
+{{- /* Chomp trailing newlines. */ -}}

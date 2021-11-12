@@ -1,0 +1,6 @@
+[error]
+'0001' = '(HU-E-0001) Configuration error. Template does not exist: %q'
+'0002' = '(HU-E-0002) Configuration error. Backlinks are enabled. Please enable the link render hook.'
+
+[warning]
+'0001' = '(HU-W-0001) Debugging is enabled.'

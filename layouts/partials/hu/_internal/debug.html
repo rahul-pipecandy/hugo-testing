@@ -1,0 +1,8 @@
+{{- /* Configure. */ -}}
+{{- $cfg := site.Params.hu -}}
+{{- $debugStyle := $cfg.internal.debug.style -}}
+
+{{- /* Render. */ -}}
+<pre {{ printf "style=%q" $debugStyle | safeHTMLAttr }}>{{ . }}</pre>
+
+{{- /* Chomp trailing newlines. */ -}}
