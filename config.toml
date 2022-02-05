@@ -1,3 +1,16 @@
-baseURL = 'https://example.org/'
+baseURL = 'https://example.org/subdir/'
 languageCode = 'en-us'
-title = '@@TITLE@@'
+title = 'Hugo GitHub Issue #7805'
+
+disableKinds = ['RSS','sitemap','page','section','taxonomy','term']
+
+relativeURLs = true
+
+defaultContentLanguage = 'en'
+defaultContentLanguageInSubdir = true
+
+[languages.en]
+[languages.es]
+
+[markup.goldmark.renderer]
+unsafe = true

@@ -1,5 +1,5 @@
 +++
-title = 'Hugo GitHub Issue #7805 (en)'
+title = 'Hugo GitHub Issue #7805 (es)'
 date = 2022-02-04T16:04:32-08:00
 draft = false
 details = 'https://github.com/gohugoio/hugo/issues/7805'
