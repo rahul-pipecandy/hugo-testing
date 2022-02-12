@@ -1,0 +1,151 @@
+{{- /* Set namespace/. */}}
+{{- $ns := "views/archive" }}
+
+{{- /* Validate parameters. */}}
+{{- $validFormats := slice "default" "terse" }}
+{{- $msg1 := "When passing a map to the archive partial, one of the elements must be named 'pageCollection', set to a collection of pages." }}
+{{- $msg2 := "The 'format' specified in the map passed to the archive partial is invalid. Valid choices are %s." }}
+
+{{- $pageCollection := . }}
+{{- $format := "default" }}
+{{- $slug := "archive" }}
+
+{{- if reflect.IsMap . }}
+  {{- with .pageCollection }}
+    {{- $pageCollection = . }}
+  {{- else }}
+    {{- errorf $msg1 }}
+  {{- end }}
+  {{- with .format }}
+    {{- $format = . }}
+  {{- end }}
+  {{- with .slug }}
+    {{- $slug = . }}
+  {{- end }}
+{{- end }}
+
+{{- $format = $format | lower }}
+{{- $slug = $slug | lower }}
+
+{{- if not (in $validFormats $format) }}
+  {{- $quoted := apply $validFormats "printf" "'%s'" "." }}
+  {{- errorf $msg2 (delimit $quoted ", " " and ") }}
+{{- end }}
+
+{{- /* Build a map of pages by year, month, and day */}}
+{{- $pages := dict }}
+{{- range $pageCollection.GroupByDate "2006" "asc" }}
+  {{- $month := dict }}
+  {{- range .GroupByDate "01" }}
+    {{- $day := dict }}
+    {{- range .GroupByDate "02" }}
+      {{- $pages := slice  }}
+      {{- range .ByDate }}
+        {{- $page := .Page }}
+        {{- $pages = $pages | append $page }}
+      {{- end }}
+      {{- $day = merge $day (dict .Key $pages) }}
+    {{- end }}
+    {{- $month = merge $month (dict .Key $day) }}
+  {{- end }}
+  {{- $pages = merge $pages (dict .Key $month) }}
+{{- end }}
+
+{{- /* Build a slice of relative permalinks to the archive pages. */}}
+{{- $links := dict  }}
+{{- range $year, $months := $pages }}
+  {{- range $month, $days := $months }}
+    {{- range $day, $_ := $days }}
+      {{- $links = $links | merge (dict (print $year $month $day) (printf "/%s/%s/%s/%s/" $slug $year $month $day)) }}
+    {{- end }}
+    {{- $links = $links | merge (dict (print $year $month) (printf "/%s/%s/%s/" $slug $year $month)) }}
+  {{- end }}
+  {{- $links = $links | merge (dict $year (printf "/%s/%s/" $slug $year)) }}
+{{- end }}
+
+{{- /* Build a widget. */}}
+{{- $years := slice }}
+{{- range $year, $_ := $pages }}
+  {{- $years = $years | append $year }}
+{{- end }}
+{{- $years = sort $years "value" "desc" }}
+
+{{- $formatString := "Jan" }}
+{{- if eq $format "terse" }}
+  {{- $formatString = "01" }}
+{{- end }}
+
+<table class="views-archive-widget-{{ $format }}">
+  {{- range $year := $years }}
+    <tr>
+      <th scope="row">
+        {{- $href := index $links (printf "%s" $year) }}
+        <a href="{{ $href }}">{{ $year }}</a>
+      </th>
+      {{- range $month := seq 1 12 }}
+        {{- $label := (printf "%s-%02d-01" $year $month) | time.Format $formatString }}
+        {{- with index $links (printf "%s%02d" $year $month) }}
+          <td><a href="{{ . }}">{{ $label }}</a></td>
+        {{- else }}
+          <td class="empty">{{ $label }}</td>
+        {{- end }}
+      {{- end }}
+    </tr>
+  {{- end }}
+</table>
+
+{{- /* Generate archive pages */}}
+{{- $p := slice }}
+{{- range $year, $months := $pages }}
+  {{- range $month, $days := $months }}
+    {{- range $day, $pages := $days }}
+      {{ $dayPages := slice }}
+      {{- range $pages }}
+        {{- $dayPages = $dayPages | append . }}
+      {{- end }}
+      {{ $date := printf "%s-%s-%s" $year $month $day | time.AsTime }}
+      {{- $ctx := dict
+        "Title" (printf "%s - %s" ($slug | humanize | title) ($date | time.Format ":date_long"))
+        "Date" $date
+        "Pages" $dayPages
+      }}
+      {{- $page := partial (path.Join $ns "list-day.html") $ctx }}
+      {{- $targetPath := path.Join $slug $year $month $day "index.html" }}
+      {{- (resources.FromString $targetPath $page).Publish }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+
+{{- /* Debug. */}}
+
+{{- if false }}
+<pre>
+Pages object:
+{{ jsonify (dict "indent" "  ") $pages }}
+</pre>
+{{- end }}
+
+{{- if true }}
+<pre>
+Links object:
+{{ jsonify (dict "indent" "  ") $links }}
+</pre>
+{{- end }}
+
+{{- if true }}
+<pre>
+Page list:
+{{- range $year, $months := $pages }}
+  {{ $year }}
+  {{- range $month, $days := $months }}
+    {{ $month }}
+    {{- range $day, $pages := $days }}
+      {{ $day }}
+      {{- range $pages }}
+        <a href="{{- .RelPermalink }}">{{- .LinkTitle }}</a>
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+</pre>
+{{- end }}

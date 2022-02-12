@@ -6,11 +6,16 @@
   {{ with .Params.description }}
     <p>Description: {{ . }}</p>
   {{ end }}
-  {{ with or .Params.url .Params.details }}
-    <hr>
-  {{ end }}
   {{ .Content }}
-  {{ range .Site.RegularPages }}
-    <h2><a href="{{ .RelPermalink }}">{{ .Title }}</a> {{ .Date.Format "2006-01-02" }}</h2>
-  {{ end }}
+
+  {{ $p := where site.RegularPages "Type" "post" }}
+  {{ partial "views/archive/init.html" (dict "pageCollection" $p "format" "default" "slug" "posts/archive") }}
+
+  {{/*
+  {{ partial "views/archive/init.html" $p }}
+  {{ partial "views/archive/init.html" (dict "pageCollection" $p) }}
+  {{ partial "views/archive/init.html" (dict "pageCollection" $p "format" "default") }}
+  {{ partial "views/archive/init.html" (dict "pageCollection" $p "format" "default" "slug" "archive") }}
+  */}}
+
 {{ end }}

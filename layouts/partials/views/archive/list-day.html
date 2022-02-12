@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0">
+  {{ partial "head/title.html" . }}
+  {{ partialCached "head/css.html" . }}
+</head>
+<body>
+<h1>{{ .Title }}</h1>
+
+{{ range .Pages }}
+  {{- $ns := "views/archive" }}
+  {{- $t := "list-item-day.html" }}
+  {{- if or (templates.Exists (path.Join .Type $ns $t)) (templates.Exists (path.Join "_default" $ns $t)) }}
+    {{ .Render (path.Join $ns (index (split $t ".") 0)) }}
+  {{- else }}
+    {{ partial (path.Join $ns $t) . }}
+  {{- end }}
+{{ end }}
+
+</body>
+</html>

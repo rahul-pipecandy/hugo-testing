@@ -1,0 +1,32 @@
+{{/*
+Returns the path to the list template with the highest precedence.
+
+Throws an error if a matching template was not found.
+
+@param {string} duration - Possible values are all, year, month, and day
+@return {string} template - Path to the list template with the highest precedence.
+
+*/}}
+{{ $ns := "views/archive" }}
+{{ $base := path.Join "layouts/partials" $ns "list" }}
+{{ $template := "" }}
+
+{{ $s := slice }}
+{{ $s = $s | append printf "%s-%s.html" $base .duration }}
+{{ $s = $s | append printf "%s.html" $base }}
+
+{{ $found := false }}
+{{ range $s }}
+  {{ if not $found }}
+    {{ if templates.Exists . }}
+      {{ $template = . }}
+      {{ $found = true }}
+    {{ end }}
+  {{ end }}
+{{ end }}
+
+{{ if not $found }}
+  {{ errorf "Unable to location a matching list template." }}
+{{ end }}
+
+{{ return $template }}

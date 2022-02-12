@@ -1,0 +1,28 @@
+.views-archive-widget-default,
+.views-archive-widget-terse {
+  border-collapse: collapse;
+  a {
+    text-decoration: none;
+  }
+  td {
+    background: #efefef;
+  }
+  td.empty {
+    background: #fcfcfc;
+  }
+  th {
+    background: #ddd;
+  }
+  td,
+  th {
+    border: 1px solid #333;
+    text-align: center;
+    padding: 0 0.4rem;
+  }
+}
+.views-archive-widget-terse {
+  td,
+  th {
+    padding: 0 0.25rem;
+  }
+}
