@@ -9,19 +9,29 @@
 <h1>{{ .Title }}</h1>
 {{ .Content }}
 
-{{ range site.Data.remote.pages }}
-  {{ $json := getJSON . }}
-  {{ $ctx := dict
-    "Title" $json.name
-    "Date" ($json.published_at | time.AsTime)
-    "Content" ($json.body | $.Page.RenderString)
-    "Site" site
-  }}
-  {{ $page := partial "remote.html" $ctx }}
-  {{ $targetPath := path.Join "remote" ($json.name | urlize) }}
-  {{ $href := (resources.FromString $targetPath $page).RelPermalink }}
-  <h2><a href="{{ $href }}">{{ $json.name }}</a></h2>
-{{ end }}
+{{$siteUrl := "https://api.publicapis.org/entries"}}
+{{$siteData := getJSON (resources.GetRemote $siteUrl (dict 
+  "method" "get"
+)).Permalink}}
+
+{{$infoUrl := "https://api.publicapis.org/random"}}
+{{range $siteData.entries}}
+ {{$slug := .API}}
+ {{$cmpData := getJSON (resources.GetRemote $infoUrl (dict 
+  "method" "get"
+)).Permalink}}
+{{ $ctx := dict
+  "Title"  ($slug | $.Page.RenderString)
+  "Content" .Description
+  "Site" site
+}}
+
+{{ $page := partial "remote.html" $ctx }}
+{{ $targetPath := path.Join "remote" $slug | urlize }}
+{{ $href := (resources.FromString $targetPath $page).RelPermalink }}
+<h2><a href="{{ $href }}">{{ $slug }}</a></h2>
+
+{{end}}
 
 </body>
 </html>
